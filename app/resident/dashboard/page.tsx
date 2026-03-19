@@ -8,10 +8,10 @@ import { FileText, AlertCircle, Calendar, Bell, Clock, MapPin, Phone } from 'luc
 
 export default function ResidentDashboard() {
   const stats = [
-    { label: 'Pending Requests', value: 2, icon: FileText, color: 'bg-blue-100 text-blue-600', href: '/resident/documents' },
-    { label: 'Open Cases', value: 1, icon: AlertCircle, color: 'bg-red-100 text-red-600', href: '/resident/blotter' },
-    { label: 'Programs', value: 4, icon: Calendar, color: 'bg-primary/10 text-primary', href: '/resident/programs' },
-    { label: 'Unread News', value: 3, icon: Bell, color: 'bg-accent/20 text-accent-foreground', href: '/resident/announcements' },
+    { label: 'Pending Requests', value: 0, icon: FileText, color: 'bg-blue-100 text-blue-600', href: '/resident/documents' },
+    { label: 'Open Cases', value: 0, icon: AlertCircle, color: 'bg-red-100 text-red-600', href: '/resident/blotter' },
+    { label: 'Programs', value: 0, icon: Calendar, color: 'bg-primary/10 text-primary', href: '/resident/programs' },
+    { label: 'Unread News', value: 0, icon: Bell, color: 'bg-accent/20 text-accent-foreground', href: '/resident/announcements' },
   ];
 
   return (

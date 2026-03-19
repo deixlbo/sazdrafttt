@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PortalHeader } from '@/components/portal/header';
-import { mockAnnouncements } from '@/lib/mock-data';
 import { AlertCircle, Megaphone, MessageSquare } from 'lucide-react';
 
 export default function AnnouncementsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const categories = ['All', 'Event', 'Meeting', 'Maintenance', 'Alert'];
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const announcements: any[] = [];
 
   const filteredAnnouncements = selectedCategory === 'All'
-    ? mockAnnouncements
-    : mockAnnouncements.filter(a => a.category === selectedCategory);
+    ? announcements
+    : announcements.filter(a => a.category === selectedCategory);
 
   const sortedAnnouncements = [...filteredAnnouncements].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()

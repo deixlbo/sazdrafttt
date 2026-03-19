@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { Bell, X, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { mockNotifications } from '@/lib/mock-data';
 
 export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<any[]>([]);
   
   const unreadCount = notifications.filter(n => !n.read).length;
 

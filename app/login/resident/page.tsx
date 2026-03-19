@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Users, ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Users, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 
@@ -32,12 +32,6 @@ export default function ResidentLoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-primary/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-fadeUp">
-        {/* Back Link */}
-        <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
-
         <Card className="p-8 border-primary/20 shadow-lg">
           {/* Logo */}
           <div className="text-center mb-8">
@@ -48,8 +42,8 @@ export default function ResidentLoginPage() {
               height={80}
               className="rounded-full mx-auto mb-4 border-4 border-primary/20"
             />
-            <h1 className="text-2xl font-bold text-foreground">Resident Portal</h1>
-            <p className="text-muted-foreground text-sm mt-1">Sign in to your resident account</p>
+            <h1 className="text-2xl font-bold text-foreground">Barangay Santiago</h1>
+            <p className="text-muted-foreground text-sm mt-1">Resident Portal</p>
           </div>
 
           {/* User Type Badge */}
@@ -139,16 +133,6 @@ export default function ResidentLoginPage() {
               Register here
             </Link>
           </p>
-
-          {/* Switch to Official */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-center text-sm text-muted-foreground">
-              Are you a barangay official?{' '}
-              <Link href="/login/official" className="text-secondary font-medium hover:underline">
-                Official Login
-              </Link>
-            </p>
-          </div>
         </Card>
       </div>
     </div>

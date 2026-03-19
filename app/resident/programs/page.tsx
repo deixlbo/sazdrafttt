@@ -5,13 +5,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PortalHeader } from '@/components/portal/header';
-import { mockPrograms } from '@/lib/mock-data';
 import { Calendar, MapPin, Users } from 'lucide-react';
 
 export default function ProgramsPage() {
   const [enrolled, setEnrolled] = useState<string[]>([]);
   const categories = ['All', 'Health', 'Livelihood', 'Sports', 'Environment'];
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const programs: any[] = [];
 
   const handleEnroll = (id: string) => {
     setEnrolled(prev => 
@@ -22,8 +22,8 @@ export default function ProgramsPage() {
   };
 
   const filteredPrograms = selectedCategory === 'All' 
-    ? mockPrograms 
-    : mockPrograms.filter(p => p.category === selectedCategory);
+    ? programs 
+    : programs.filter(p => p.category === selectedCategory);
 
   return (
     <>

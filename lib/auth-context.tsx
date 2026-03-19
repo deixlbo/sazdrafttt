@@ -12,7 +12,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { ref, set, onDisconnect, serverTimestamp as rtdbServerTimestamp } from 'firebase/database';
 import { auth, db, realtimeDb } from './firebase';
 import { useRouter } from 'next/navigation';
@@ -30,7 +30,7 @@ export interface UserData {
   birthDate?: string;
   gender?: string;
   civilStatus?: string;
-  position?: string; // For officials
+  position?: string;
   createdAt?: Date;
 }
 
@@ -65,15 +65,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
-        // Fetch user data from Firestore
         try {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          let userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+
+          if (!userDoc.exists()) {
+            const q = query(
+              collection(db, 'users'),
+              where('email', '==', firebaseUser.email)
+            );
+            const querySnap = await getDocs(q);
+            if (!querySnap.empty) {
+              userDoc = querySnap.docs[0] as any;
+            }
+          }
+
           if (userDoc.exists()) {
             const data = userDoc.data();
             setUserData({
@@ -90,17 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               position: data.position,
             });
 
-            // Set online status
             const userStatusRef = ref(realtimeDb, `online_status/${firebaseUser.uid}`);
             set(userStatusRef, {
               online: true,
-              lastSeen: rtdbServerTimestamp()
+              lastSeen: rtdbServerTimestamp(),
             });
-
-            // Set offline on disconnect
             onDisconnect(userStatusRef).set({
               online: false,
-              lastSeen: rtdbServerTimestamp()
+              lastSeen: rtdbServerTimestamp(),
             });
           }
         } catch (err) {
@@ -109,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserData(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -119,39 +126,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string, role: UserRole) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Verify user role
-      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
-      if (!userDoc.exists()) {
+      const uid = userCredential.user.uid;
+
+      console.log('Auth UID:', uid);
+
+      let docSnap = await getDoc(doc(db, 'users', uid));
+      let docData = docSnap.exists() ? docSnap.data() : null;
+
+      if (!docData) {
+        console.warn('No doc found by UID, trying email fallback...');
+        const q = query(collection(db, 'users'), where('email', '==', email));
+        const querySnap = await getDocs(q);
+
+        if (!querySnap.empty) {
+          docData = querySnap.docs[0].data();
+          const wrongDocId = querySnap.docs[0].id;
+          console.warn('Found doc by email. Doc ID: ' + wrongDocId + ' | Auth UID: ' + uid);
+        }
+      }
+
+      if (!docData) {
         await signOut(auth);
         throw new Error('User data not found. Please contact support.');
       }
-      
-      const userRole = userDoc.data().role;
-      if (userRole !== role) {
+
+      console.log('Firestore data:', docData);
+
+      const firestoreRole = (docData.role as string)?.toLowerCase().trim();
+      const requestedRole = role.toLowerCase().trim();
+
+      console.log('Firestore role:', firestoreRole);
+      console.log('Requested role:', requestedRole);
+
+      if (!firestoreRole) {
         await signOut(auth);
-        throw new Error(`Invalid login. Please use the ${userRole} login page.`);
+        throw new Error('No role assigned to this account. Please contact support.');
       }
-      
-      // Redirect based on role
-      router.push(`/${role}/dashboard`);
+
+      if (firestoreRole !== requestedRole) {
+        await signOut(auth);
+        throw new Error(
+          'This account is registered as ' + firestoreRole + '. Please use the ' + firestoreRole + ' login page.'
+        );
+      }
+
+      if (docData.status && docData.status !== 'active') {
+        await signOut(auth);
+        throw new Error('Your account has been deactivated. Please contact support.');
+      }
+
+      router.push('/' + firestoreRole + '/dashboard');
+
     } catch (err: any) {
-      let errorMessage = 'Login failed. Please try again.';
-      
+      let message = 'Login failed. Please try again.';
+
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-        errorMessage = 'Invalid email or password.';
+        message = 'Invalid email or password.';
       } else if (err.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email.';
+        message = 'No account found with this email.';
       } else if (err.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
+        message = 'Too many failed attempts. Please try again later.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Invalid email address.';
       } else if (err.message) {
-        errorMessage = err.message;
+        message = err.message;
       }
-      
-      setError(errorMessage);
+
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -161,12 +205,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: RegisterData) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Create auth user
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      
-      // Create user document in Firestore
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
+
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         email: data.email,
         fullName: data.fullName,
@@ -177,21 +223,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      
-      // Redirect to resident dashboard
+
       router.push('/resident/dashboard');
     } catch (err: any) {
-      let errorMessage = 'Registration failed. Please try again.';
-      
+      let message = 'Registration failed. Please try again.';
+
       if (err.code === 'auth/email-already-in-use') {
-        errorMessage = 'An account with this email already exists.';
+        message = 'An account with this email already exists.';
       } else if (err.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please use a stronger password.';
+        message = 'Password is too weak. Please use at least 6 characters.';
       } else if (err.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
+        message = 'Invalid email address.';
       }
-      
-      setError(errorMessage);
+
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -201,15 +246,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     setLoading(true);
     try {
-      // Set offline status
       if (user) {
         const userStatusRef = ref(realtimeDb, `online_status/${user.uid}`);
         await set(userStatusRef, {
           online: false,
-          lastSeen: rtdbServerTimestamp()
+          lastSeen: rtdbServerTimestamp(),
         });
       }
-      
       await signOut(auth);
       setUserData(null);
       router.push('/');
@@ -225,81 +268,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (err: any) {
-      let errorMessage = 'Failed to send reset email. Please try again.';
-      
-      if (err.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email.';
-      } else if (err.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
-      }
-      
-      setError(errorMessage);
+      let message = 'Failed to send reset email. Please try again.';
+      if (err.code === 'auth/user-not-found') message = 'No account found with this email.';
+      else if (err.code === 'auth/invalid-email') message = 'Invalid email address.';
+      setError(message);
       throw err;
     }
   };
 
   const updateUserPassword = async (currentPassword: string, newPassword: string) => {
     if (!user || !user.email) throw new Error('No user logged in');
-    
     setError(null);
     try {
-      // Re-authenticate user
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
       await reauthenticateWithCredential(user, credential);
-      
-      // Update password
       await updatePassword(user, newPassword);
     } catch (err: any) {
-      let errorMessage = 'Failed to update password.';
-      
-      if (err.code === 'auth/wrong-password') {
-        errorMessage = 'Current password is incorrect.';
-      } else if (err.code === 'auth/weak-password') {
-        errorMessage = 'New password is too weak.';
-      }
-      
-      setError(errorMessage);
+      let message = 'Failed to update password.';
+      if (err.code === 'auth/wrong-password') message = 'Current password is incorrect.';
+      else if (err.code === 'auth/weak-password') message = 'New password is too weak.';
+      setError(message);
       throw err;
     }
   };
 
   const updateUserProfile = async (data: Partial<UserData>) => {
     if (!user) throw new Error('No user logged in');
-    
     setError(null);
     try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
+      await updateDoc(doc(db, 'users', user.uid), {
         ...data,
         updatedAt: serverTimestamp(),
       });
-      
-      // Update local state
-      if (userData) {
-        setUserData({ ...userData, ...data });
-      }
-    } catch (err: any) {
+      if (userData) setUserData({ ...userData, ...data });
+    } catch {
       setError('Failed to update profile. Please try again.');
-      throw err;
+      throw new Error('Failed to update profile');
     }
   };
 
   const clearError = () => setError(null);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      userData,
-      loading,
-      error,
-      login,
-      register,
-      logout,
-      resetPassword,
-      updateUserPassword,
-      updateUserProfile,
-      clearError,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userData,
+        loading,
+        error,
+        login,
+        register,
+        logout,
+        resetPassword,
+        updateUserPassword,
+        updateUserProfile,
+        clearError,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

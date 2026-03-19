@@ -58,19 +58,6 @@ export default function LandingPage() {
               <a href="#about" className="text-sidebar-foreground/80 hover:text-sidebar-foreground transition">About</a>
               <a href="#services" className="text-sidebar-foreground/80 hover:text-sidebar-foreground transition">Services</a>
               <a href="#contact" className="text-sidebar-foreground/80 hover:text-sidebar-foreground transition">Contact</a>
-              {user ? (
-                <Link href={getDashboardUrl()}>
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Dashboard
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/login">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Login
-                  </Button>
-                </Link>
-              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -91,19 +78,6 @@ export default function LandingPage() {
               <a href="#about" className="text-sidebar-foreground/80 hover:text-sidebar-foreground transition py-2">About</a>
               <a href="#services" className="text-sidebar-foreground/80 hover:text-sidebar-foreground transition py-2">Services</a>
               <a href="#contact" className="text-sidebar-foreground/80 hover:text-sidebar-foreground transition py-2">Contact</a>
-              {user ? (
-                <Link href={getDashboardUrl()}>
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Dashboard
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/login">
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Login
-                  </Button>
-                </Link>
-              )}
             </div>
           </div>
         )}
@@ -117,8 +91,8 @@ export default function LandingPage() {
             <Image
               src="/santiago.jpg"
               alt="Barangay Santiago Logo"
-              width={120}
-              height={120}
+              width={250}
+              height={250}
               className="rounded-full mx-auto mb-6 border-4 border-primary shadow-lg"
             />
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-sidebar-foreground mb-4 text-balance">
@@ -135,7 +109,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link href="/login/official">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto border-sidebar-foreground/30 text-sidebar-foreground hover:bg-sidebar-foreground/10 px-8">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-sidebar-foreground/30 text-foreground hover:bg-sidebar-foreground/10 px-8">
                   <Shield className="w-5 h-5 mr-2" />
                   Official Login
                 </Button>
@@ -238,7 +212,6 @@ export default function LandingPage() {
               </div>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li>Barangay Santiago Health Center</li>
-                <li>Open: 24/7</li>
                 <li>Contact: 0923-456-7890</li>
               </ul>
             </Card>
@@ -280,7 +253,6 @@ export default function LandingPage() {
               <Clock className="w-8 h-8 mx-auto mb-3 text-primary" />
               <h3 className="font-semibold mb-2">Office Hours</h3>
               <p className="text-sm text-sidebar-foreground/80">Mon-Fri: 8 AM - 5 PM</p>
-              <p className="text-sm text-sidebar-foreground/80">Sat: 8 AM - 12 PM</p>
             </div>
             <div className="animate-fadeUp" style={{ animationDelay: '0.1s' }}>
               <MapPin className="w-8 h-8 mx-auto mb-3 text-primary" />
@@ -291,7 +263,7 @@ export default function LandingPage() {
             <div className="animate-fadeUp" style={{ animationDelay: '0.2s' }}>
               <Phone className="w-8 h-8 mx-auto mb-3 text-primary" />
               <h3 className="font-semibold mb-2">Contact Us</h3>
-              <p className="text-sm text-sidebar-foreground/80">info@santiago.gov</p>
+              <p className="text-sm text-sidebar-foreground/80">barangaysantiagosaz@gmail.com</p>
               <p className="text-sm text-sidebar-foreground/80">0912-345-6789</p>
             </div>
           </div>

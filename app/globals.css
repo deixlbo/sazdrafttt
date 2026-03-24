@@ -3,107 +3,117 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Zambales-inspired Theme: Green (community, land) + Blue (peace, governance) */
+/* Barangay Santiago Saz - Clean Green Government Theme */
 :root {
-  /* Background colors - Clean white with subtle warmth */
-  --background: oklch(0.99 0.002 110);
-  --foreground: oklch(0.20 0.02 150);
+  /* Background colors - Clean white */
+  --background: oklch(0.985 0.002 145);
+  --foreground: oklch(0.18 0.03 145);
   
   /* Card - Pure white */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.02 150);
+  --card-foreground: oklch(0.18 0.03 145);
   
   /* Popover */
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.02 150);
+  --popover-foreground: oklch(0.18 0.03 145);
   
-  /* Primary - Forest Green (community, land) */
-  --primary: oklch(0.45 0.12 150);
+  /* Primary - Government Green */
+  --primary: oklch(0.42 0.14 145);
   --primary-foreground: oklch(1 0 0);
   
-  /* Secondary - Deep Blue (peace, governance) */
-  --secondary: oklch(0.35 0.08 230);
-  --secondary-foreground: oklch(0.98 0.005 230);
+  /* Secondary - Light Green */
+  --secondary: oklch(0.94 0.04 145);
+  --secondary-foreground: oklch(0.30 0.08 145);
   
   /* Muted - Light sage */
-  --muted: oklch(0.96 0.015 150);
-  --muted-foreground: oklch(0.45 0.03 150);
+  --muted: oklch(0.96 0.02 145);
+  --muted-foreground: oklch(0.50 0.04 145);
   
-  /* Accent - Soft teal (blend of green and blue) */
-  --accent: oklch(0.92 0.04 180);
-  --accent-foreground: oklch(0.25 0.06 180);
+  /* Accent - Soft green */
+  --accent: oklch(0.92 0.05 145);
+  --accent-foreground: oklch(0.28 0.08 145);
   
   /* Destructive - Soft red for errors */
   --destructive: oklch(0.55 0.2 25);
   --destructive-foreground: oklch(1 0 0);
   
   /* Borders and inputs */
-  --border: oklch(0.90 0.015 150);
-  --input: oklch(0.96 0.01 150);
-  --ring: oklch(0.45 0.12 150);
+  --border: oklch(0.88 0.02 145);
+  --input: oklch(0.96 0.015 145);
+  --ring: oklch(0.42 0.14 145);
   
-  /* Charts - Using green/blue palette */
-  --chart-1: oklch(0.45 0.12 150);
-  --chart-2: oklch(0.55 0.1 200);
-  --chart-3: oklch(0.50 0.08 180);
-  --chart-4: oklch(0.60 0.12 230);
-  --chart-5: oklch(0.55 0.15 140);
+  /* Charts - Green palette */
+  --chart-1: oklch(0.42 0.14 145);
+  --chart-2: oklch(0.52 0.12 145);
+  --chart-3: oklch(0.62 0.10 145);
+  --chart-4: oklch(0.72 0.08 145);
+  --chart-5: oklch(0.35 0.10 145);
   
   /* Border radius */
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   
-  /* Sidebar - Deep blue-green */
-  --sidebar: oklch(0.28 0.06 200);
-  --sidebar-foreground: oklch(0.96 0.01 150);
-  --sidebar-primary: oklch(0.55 0.14 150);
+  /* Sidebar - Deep Green */
+  --sidebar: oklch(0.22 0.06 145);
+  --sidebar-foreground: oklch(0.96 0.01 145);
+  --sidebar-primary: oklch(0.52 0.14 145);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.35 0.05 200);
-  --sidebar-accent-foreground: oklch(0.96 0.01 150);
-  --sidebar-border: oklch(0.35 0.05 200);
-  --sidebar-ring: oklch(0.55 0.14 150);
+  --sidebar-accent: oklch(0.30 0.05 145);
+  --sidebar-accent-foreground: oklch(0.96 0.01 145);
+  --sidebar-border: oklch(0.30 0.04 145);
+  --sidebar-ring: oklch(0.52 0.14 145);
   
   /* Success color */
-  --success: oklch(0.55 0.15 150);
+  --success: oklch(0.55 0.15 145);
   --success-foreground: oklch(1 0 0);
   
   /* Warning color */
-  --warning: oklch(0.75 0.15 85);
-  --warning-foreground: oklch(0.25 0.05 85);
+  --warning: oklch(0.78 0.15 75);
+  --warning-foreground: oklch(0.25 0.05 75);
+  
+  /* Info color */
+  --info: oklch(0.55 0.12 230);
+  --info-foreground: oklch(1 0 0);
 }
 
 .dark {
-  --background: oklch(0.15 0.02 200);
-  --foreground: oklch(0.96 0.01 150);
-  --card: oklch(0.18 0.02 200);
-  --card-foreground: oklch(0.96 0.01 150);
-  --popover: oklch(0.18 0.02 200);
-  --popover-foreground: oklch(0.96 0.01 150);
-  --primary: oklch(0.60 0.14 150);
-  --primary-foreground: oklch(0.15 0.02 150);
-  --secondary: oklch(0.30 0.04 200);
-  --secondary-foreground: oklch(0.96 0.01 200);
-  --muted: oklch(0.25 0.02 200);
-  --muted-foreground: oklch(0.65 0.02 150);
-  --accent: oklch(0.30 0.04 180);
-  --accent-foreground: oklch(0.96 0.01 180);
+  --background: oklch(0.14 0.02 145);
+  --foreground: oklch(0.96 0.01 145);
+  --card: oklch(0.18 0.02 145);
+  --card-foreground: oklch(0.96 0.01 145);
+  --popover: oklch(0.18 0.02 145);
+  --popover-foreground: oklch(0.96 0.01 145);
+  --primary: oklch(0.55 0.14 145);
+  --primary-foreground: oklch(0.14 0.02 145);
+  --secondary: oklch(0.28 0.04 145);
+  --secondary-foreground: oklch(0.96 0.01 145);
+  --muted: oklch(0.24 0.02 145);
+  --muted-foreground: oklch(0.65 0.02 145);
+  --accent: oklch(0.28 0.04 145);
+  --accent-foreground: oklch(0.96 0.01 145);
   --destructive: oklch(0.50 0.18 25);
   --destructive-foreground: oklch(0.96 0.01 25);
-  --border: oklch(0.30 0.03 200);
-  --input: oklch(0.25 0.02 200);
-  --ring: oklch(0.55 0.12 150);
-  --sidebar: oklch(0.18 0.03 200);
-  --sidebar-foreground: oklch(0.96 0.01 150);
-  --sidebar-primary: oklch(0.55 0.12 150);
+  --border: oklch(0.28 0.03 145);
+  --input: oklch(0.24 0.02 145);
+  --ring: oklch(0.55 0.12 145);
+  --sidebar: oklch(0.16 0.03 145);
+  --sidebar-foreground: oklch(0.96 0.01 145);
+  --sidebar-primary: oklch(0.55 0.12 145);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.25 0.03 200);
-  --sidebar-accent-foreground: oklch(0.96 0.01 150);
-  --sidebar-border: oklch(0.30 0.03 200);
-  --sidebar-ring: oklch(0.55 0.12 150);
+  --sidebar-accent: oklch(0.24 0.03 145);
+  --sidebar-accent-foreground: oklch(0.96 0.01 145);
+  --sidebar-border: oklch(0.28 0.03 145);
+  --sidebar-ring: oklch(0.55 0.12 145);
 }
 
 @theme inline {
-  --font-sans: 'Poppins', 'Inter', system-ui, sans-serif;
+  --font-sans: 'Inter', 'Poppins', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

@@ -115,8 +115,8 @@ export default function OfficialDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 p-6 border-primary/20 animate-fadeUp">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+          <Card className="p-6 border-primary/20 animate-fadeUp">
             <h2 className="text-xl font-bold text-foreground mb-4">Recent Document Requests</h2>
             <div className="space-y-4">
               {loading ? (
@@ -147,36 +147,6 @@ export default function OfficialDashboard() {
             <Link href="/official/documents" className="block mt-4">
               <Button variant="outline" className="w-full">View All Requests</Button>
             </Link>
-          </Card>
-
-          <Card className="p-6 border-primary/20 animate-fadeUp">
-            <h2 className="text-xl font-bold text-foreground mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <Link href="/official/announcements">
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground justify-start gap-2">
-                  <Megaphone className="w-4 h-4" />
-                  Post Announcement
-                </Button>
-              </Link>
-              <Link href="/official/programs">
-                <Button className="w-full bg-primary/10 text-primary hover:bg-primary/20 justify-start gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Create Program
-                </Button>
-              </Link>
-              <Link href="/official/officials">
-                <Button className="w-full bg-primary/10 text-primary hover:bg-primary/20 justify-start gap-2">
-                  <Users className="w-4 h-4" />
-                  Manage Officials
-                </Button>
-              </Link>
-              <Link href="/official/audit-logs">
-                <Button className="w-full bg-primary/10 text-primary hover:bg-primary/20 justify-start gap-2">
-                  <ClipboardList className="w-4 h-4" />
-                  View Audit Logs
-                </Button>
-              </Link>
-            </div>
           </Card>
         </div>
       </div>

@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PortalHeader } from '@/components/portal/header';
 import { useBlotterReports, updateDocument, deleteDocument, addAuditLog, formatTimestamp } from '@/lib/firebase-hooks';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
-import { Trash2, AlertCircle, X, Eye } from 'lucide-react';
+import { Trash2, AlertCircle, X, Eye, Bell } from 'lucide-react';
 
 export default function OfficialBlotterPage() {
   const { data: cases, loading } = useBlotterReports();
@@ -17,6 +17,15 @@ export default function OfficialBlotterPage() {
   const [viewCase, setViewCase] = useState<any | null>(null);
   const [updateStatus, setUpdateStatus] = useState('');
   const [handlerNotes, setHandlerNotes] = useState('');
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationCase, setNotificationCase] = useState<any | null>(null);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  
+  // Add case numbers to each blotter (sequential numbers)
+  const casesWithNumbers = cases.map((c: any, index: number) => ({
+    ...c,
+    caseNumber: index + 1
+  }));
 
   const handleUpdateStatus = async () => {
     if (!updateStatus || !selectedCase) return;
@@ -26,7 +35,21 @@ export default function OfficialBlotterPage() {
         status: updateStatus,
         handlerNotes: handlerNotes,
         handledBy: userData?.fullName,
+        handledAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
       });
+
+      // Add notification for the user who reported the blotter
+      if (selectedCase.userId) {
+        await addAuditLog({
+          userId: selectedCase.userId,
+          userName: selectedCase.reporterName || '',
+          userRole: 'resident',
+          action: `Blotter case #${selectedCase.caseNumber} status updated to ${updateStatus}`,
+          module: 'Blotter',
+          details: `Your blotter report has been updated to ${updateStatus}. ${handlerNotes || 'Please check with the barangay office for more details.'}`,
+        });
+      }
 
       await addAuditLog({
         userId: user?.uid || '',
@@ -34,10 +57,10 @@ export default function OfficialBlotterPage() {
         userRole: 'official',
         action: `Updated blotter status to ${updateStatus}`,
         module: 'Blotter',
-        details: `Case ${selectedCase.id} status changed to ${updateStatus}`,
+        details: `Case #${selectedCase.caseNumber} status changed to ${updateStatus}`,
       });
 
-      toast.success('Case status updated');
+      toast.success('Case status updated and resident notified');
       setSelectedCase(null);
       setUpdateStatus('');
       setHandlerNotes('');
@@ -46,26 +69,63 @@ export default function OfficialBlotterPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleNotifyResident = async (blotterCase: any) => {
+    setNotificationCase(blotterCase);
+    setNotificationMessage('');
+    setShowNotificationModal(true);
+  };
+
+  const sendNotification = async () => {
+    if (!notificationCase || !notificationMessage) return;
+
+    try {
+      await addAuditLog({
+        userId: notificationCase.userId,
+        userName: notificationCase.reporterName || '',
+        userRole: 'resident',
+        action: `Blotter case #${notificationCase.caseNumber} - Barangay Notification`,
+        module: 'Blotter',
+        details: notificationMessage,
+      });
+
+      await addAuditLog({
+        userId: user?.uid || '',
+        userName: userData?.fullName || '',
+        userRole: 'official',
+        action: `Sent notification for blotter case #${notificationCase.caseNumber}`,
+        module: 'Blotter',
+        details: `Notification sent to ${notificationCase.reporterName}: ${notificationMessage}`,
+      });
+
+      toast.success('Notification sent to resident');
+      setShowNotificationModal(false);
+      setNotificationCase(null);
+      setNotificationMessage('');
+    } catch (err) {
+      toast.error('Failed to send notification');
+    }
+  };
+
+  const handleDelete = async (blotterCase: any) => {
     if (!confirm('Are you sure you want to delete this case?')) return;
 
     try {
-      await deleteDocument('blotter_reports', id);
-      toast.success('Case deleted');
+      await deleteDocument('blotter_reports', blotterCase.id);
+      toast.success(`Case #${blotterCase.caseNumber} deleted`);
     } catch (err) {
       toast.error('Failed to delete case');
     }
   };
 
-  const filteredCases = cases.filter((c: any) =>
+  const filteredCases = casesWithNumbers.filter((c: any) =>
     statusFilter === 'all' ? true : c.status === statusFilter
   );
 
   const stats = {
-    reported: cases.filter((c: any) => c.status === 'reported').length,
-    investigating: cases.filter((c: any) => c.status === 'investigating').length,
-    resolved: cases.filter((c: any) => c.status === 'resolved').length,
-    closed: cases.filter((c: any) => c.status === 'closed').length,
+    reported: casesWithNumbers.filter((c: any) => c.status === 'reported').length,
+    investigating: casesWithNumbers.filter((c: any) => c.status === 'investigating').length,
+    resolved: casesWithNumbers.filter((c: any) => c.status === 'resolved').length,
+    closed: casesWithNumbers.filter((c: any) => c.status === 'closed').length,
   };
 
   if (loading) {
@@ -136,13 +196,14 @@ export default function OfficialBlotterPage() {
                     <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Reported By</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Severity</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Processed By</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredCases.map((blotterCase: any) => (
                     <tr key={blotterCase.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{blotterCase.id.slice(0, 8)}</td>
+                      <td className="px-6 py-4 text-sm font-mono font-semibold text-foreground">#{blotterCase.caseNumber}</td>
                       <td className="px-6 py-4 text-sm text-foreground font-medium">{blotterCase.incidentType}</td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">{blotterCase.location}</td>
                       <td className="px-6 py-4 text-sm text-foreground">{blotterCase.reporterName}</td>
@@ -168,6 +229,20 @@ export default function OfficialBlotterPage() {
                           {blotterCase.status.charAt(0).toUpperCase() + blotterCase.status.slice(1)}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-sm">
+                        {blotterCase.handledBy ? (
+                          <div>
+                            <p className="text-foreground font-medium">{blotterCase.handledBy}</p>
+                            {blotterCase.handledAt && (
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(blotterCase.handledAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Not yet assigned</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-sm flex gap-2">
                         <Button
                           size="sm"
@@ -183,8 +258,16 @@ export default function OfficialBlotterPage() {
                         >
                           Update
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleNotifyResident(blotterCase)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Bell className="w-4 h-4" />
+                        </Button>
                         <button
-                          onClick={() => handleDelete(blotterCase.id)}
+                          onClick={() => handleDelete(blotterCase)}
                           className="p-2 text-destructive hover:bg-destructive/10 rounded transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -212,8 +295,8 @@ export default function OfficialBlotterPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Case ID</p>
-                    <p className="font-mono text-foreground">{viewCase.id}</p>
+                    <p className="text-sm text-muted-foreground">Case Number</p>
+                    <p className="font-mono font-semibold text-foreground">#{viewCase.caseNumber}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
@@ -273,8 +356,13 @@ export default function OfficialBlotterPage() {
 
                 {viewCase.handledBy && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Handled By</p>
-                    <p className="text-foreground">{viewCase.handledBy}</p>
+                    <p className="text-sm text-muted-foreground">Processed By</p>
+                    <p className="text-foreground font-medium">{viewCase.handledBy}</p>
+                    {viewCase.handledAt && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Processed on: {new Date(viewCase.handledAt).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -305,7 +393,7 @@ export default function OfficialBlotterPage() {
               </div>
 
               <div className="mb-4 p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Case: <strong className="text-foreground">{selectedCase.incidentType}</strong></p>
+                <p className="text-sm text-muted-foreground">Case #<strong className="text-foreground">{selectedCase.caseNumber}</strong> - {selectedCase.incidentType}</p>
                 <p className="text-sm text-muted-foreground">Reporter: <strong className="text-foreground">{selectedCase.reporterName}</strong></p>
               </div>
 
@@ -346,7 +434,60 @@ export default function OfficialBlotterPage() {
                     className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                     disabled={!updateStatus}
                   >
-                    Update
+                    Update & Notify
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Notification Modal */}
+        {showNotificationModal && notificationCase && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="p-8 max-w-md w-full animate-scaleIn">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-foreground">Notify Resident</h2>
+                <button onClick={() => setShowNotificationModal(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mb-4 p-3 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">Case #<strong className="text-foreground">{notificationCase.caseNumber}</strong></p>
+                <p className="text-sm text-muted-foreground">Resident: <strong className="text-foreground">{notificationCase.reporterName}</strong></p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Notification Message
+                  </label>
+                  <textarea
+                    value={notificationMessage}
+                    onChange={(e) => setNotificationMessage(e.target.value)}
+                    placeholder="Example: Please visit the barangay hall for a meeting regarding your blotter report #1. We are currently investigating your case. Thank you."
+                    className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    rows={5}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This notification will be sent to the resident's notification center
+                  </p>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowNotificationModal(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={sendNotification}
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    disabled={!notificationMessage}
+                  >
+                    Send Notification
                   </Button>
                 </div>
               </div>

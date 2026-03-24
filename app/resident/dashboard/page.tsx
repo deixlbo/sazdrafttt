@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { PortalHeader } from '@/components/portal/header';
 import { FileText, AlertCircle, Calendar, Bell, Clock, MapPin, Phone } from 'lucide-react';
 
@@ -40,38 +39,6 @@ export default function ResidentDashboard() {
             </Link>
           ))}
         </div>
-
-        {/* Quick Actions */}
-        <Card className="p-6 mb-8 border-primary/20">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Quick Actions</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/resident/documents">
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
-                Request Document
-              </Button>
-            </Link>
-            <Link href="/resident/blotter">
-              <Button className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground" size="lg">
-                Report Incident
-              </Button>
-            </Link>
-            <Link href="/resident/programs">
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
-                View Programs
-              </Button>
-            </Link>
-            <Link href="/resident/announcements">
-              <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" size="lg">
-                Latest News
-              </Button>
-            </Link>
-            <Link href="/resident/profile">
-              <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground" size="lg">
-                My Profile
-              </Button>
-            </Link>
-          </div>
-        </Card>
 
         {/* About Barangay Santiago */}
         <Card className="p-6 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">

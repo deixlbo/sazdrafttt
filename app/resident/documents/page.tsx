@@ -9,22 +9,91 @@ import { PortalHeader } from '@/components/portal/header';
 import { useDocumentRequests, addDocument, deleteDocument, addAuditLog, formatTimestamp } from '@/lib/firebase-hooks';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
-import { Sparkles, CheckCircle, Clock, XCircle, Trash2, FileText, AlertCircle } from 'lucide-react';
+import { Sparkles, CheckCircle, Clock, XCircle, Trash2, FileText, X, DollarSign, ClipboardList } from 'lucide-react';
 
 const documentTypes = [
-  { id: '1', name: 'Barangay Clearance', description: 'For employment and legal purposes', days: 1 },
-  { id: '2', name: 'Certificate of Residency', description: 'Proof of residence in the barangay', days: 1 },
-  { id: '3', name: 'Certificate of Indigency', description: 'For financial assistance applications', days: 1 },
-  { id: '4', name: 'Business Permit', description: 'For business registration', days: 3 },
-  { id: '5', name: 'Building Permit', description: 'For construction purposes', days: 5 },
+  { 
+    id: '1', 
+    name: 'Barangay Clearance', 
+    description: 'For employment and legal purposes', 
+    days: 1,
+    requirements: [
+      'Valid ID (Government-issued)',
+      'Proof of residency (Utility bill or Barangay ID)',
+      'Community Tax Certificate (Cedula)'
+    ],
+    price: 50,
+    priceDescription: 'Processing fee'
+  },
+  { 
+    id: '2', 
+    name: 'Certificate of Residency', 
+    description: 'Proof of residence in the barangay', 
+    days: 1,
+    requirements: [
+      'Valid ID',
+      'Proof of residency (Utility bill)',
+      'Barangay ID (if available)'
+    ],
+    price: 30,
+    priceDescription: 'Processing fee'
+  },
+  { 
+    id: '3', 
+    name: 'Certificate of Indigency', 
+    description: 'For financial assistance applications', 
+    days: 1,
+    requirements: [
+      'Barangay ID or Valid ID',
+      'Proof of residency',
+      'Interview with Barangay Social Worker'
+    ],
+    price: 0,
+    priceDescription: 'Free service'
+  },
+  { 
+    id: '4', 
+    name: 'Business Permit', 
+    description: 'For business registration', 
+    days: 3,
+    requirements: [
+      'DTI/SEC Registration',
+      'Mayor\'s Permit from previous location (if applicable)',
+      'Zoning Clearance',
+      'Fire Safety Inspection Certificate',
+      'Community Tax Certificate (Cedula)',
+      'Valid ID of business owner'
+    ],
+    price: 500,
+    priceDescription: 'Base processing fee (varies by business type)'
+  },
+  { 
+    id: '5', 
+    name: 'Building Permit', 
+    description: 'For construction purposes', 
+    days: 5,
+    requirements: [
+      'Site Development Plan',
+      'Floor Plan',
+      'Elevation',
+      'Structural Analysis',
+      'Electrical Plan',
+      'Plumbing Plan',
+      'Location Plan',
+      'Transfer Certificate of Title (TCT)',
+      'Tax Declaration'
+    ],
+    price: 1000,
+    priceDescription: 'Base processing fee (varies by project cost)'
+  },
 ];
 
 export default function DocumentsPage() {
   const { user, userData } = useAuth();
   const { data: requests, loading, error } = useDocumentRequests(user?.uid);
-  const [newRequest, setNewRequest] = useState({ type: '', purpose: '' });
-  const [aiRecommendation, setAiRecommendation] = useState<{ type: string; confidence: number } | null>(null);
+  const [purpose, setPurpose] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<typeof documentTypes[0] | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const getStatusIcon = (status: string) => {
@@ -41,56 +110,23 @@ export default function DocumentsPage() {
     }
   };
 
-  const handlePurposeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const purpose = e.target.value;
-    setNewRequest({ ...newRequest, purpose });
-
-    if (purpose.length > 3) {
-      const keywords: Record<string, string> = {
-        job: 'Barangay Clearance',
-        employment: 'Barangay Clearance',
-        work: 'Barangay Clearance',
-        application: 'Barangay Clearance',
-        school: 'Certificate of Residency',
-        education: 'Certificate of Residency',
-        enroll: 'Certificate of Residency',
-        transfer: 'Certificate of Residency',
-        business: 'Business Permit',
-        store: 'Business Permit',
-        shop: 'Business Permit',
-        medical: 'Certificate of Indigency',
-        hospital: 'Certificate of Indigency',
-        assistance: 'Certificate of Indigency',
-        financial: 'Certificate of Indigency',
-        build: 'Building Permit',
-        construct: 'Building Permit',
-        renovation: 'Building Permit',
-      };
-
-      for (const [key, doc] of Object.entries(keywords)) {
-        if (purpose.toLowerCase().includes(key)) {
-          setAiRecommendation({
-            type: doc,
-            confidence: Math.min(95, Math.floor(70 + purpose.length / 2)),
-          });
-          return;
-        }
-      }
-    }
-    setAiRecommendation(null);
+  const handleDocumentSelect = (document: typeof documentTypes[0]) => {
+    setSelectedDocument(document);
+    setPurpose('');
+    setShowForm(true);
   };
 
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRequest.type || !newRequest.purpose || !user || !userData) return;
+    if (!selectedDocument || !purpose || !user || !userData) return;
 
     setSubmitting(true);
     try {
       await addDocument('document_requests', {
         residentId: user.uid,
         residentName: userData.fullName,
-        documentType: newRequest.type,
-        purpose: newRequest.purpose,
+        documentType: selectedDocument.name,
+        purpose: purpose,
         status: 'pending',
         address: userData.address,
       });
@@ -102,12 +138,12 @@ export default function DocumentsPage() {
         userRole: 'resident',
         action: 'Submitted document request',
         module: 'Documents',
-        details: `Requested ${newRequest.type} for ${newRequest.purpose}`,
+        details: `Requested ${selectedDocument.name} for ${purpose}`,
       });
 
       toast.success('Document request submitted successfully');
-      setNewRequest({ type: '', purpose: '' });
-      setAiRecommendation(null);
+      setPurpose('');
+      setSelectedDocument(null);
       setShowForm(false);
     } catch (err) {
       toast.error('Failed to submit request');
@@ -145,113 +181,131 @@ export default function DocumentsPage() {
       <PortalHeader title="Document Requests" description="Request and track your barangay documents" />
       
       <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
-        {/* Request Button */}
-        {!showForm && (
-          <Button 
-            onClick={() => setShowForm(true)}
-            className="mb-6 bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            Request New Document
-          </Button>
-        )}
-
-        {/* Request Form */}
-        {showForm && (
-          <Card className="p-6 mb-8 border-primary/20 animate-fadeUp">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Request a Document</h2>
-            <form onSubmit={handleSubmitRequest} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Document Type</label>
-                <select
-                  value={newRequest.type}
-                  onChange={(e) => setNewRequest({ ...newRequest, type: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  required
-                >
-                  <option value="">Select a document type...</option>
-                  {documentTypes.map((doc) => (
-                    <option key={doc.id} value={doc.name}>
-                      {doc.name} ({doc.days} day{doc.days !== 1 ? 's' : ''})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Purpose of Request</label>
-                <Input
-                  type="text"
-                  value={newRequest.purpose}
-                  onChange={handlePurposeChange}
-                  placeholder="e.g., Job application, school enrollment..."
-                  className="border-input focus:ring-primary/50"
-                  required
-                />
-              </div>
-
-              {aiRecommendation && (
-                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg animate-fadeUp">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <p className="font-semibold text-primary">AI Recommendation</p>
-                  </div>
-                  <p className="text-foreground">
-                    We recommend: <span className="font-semibold">{aiRecommendation.type}</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Confidence: {aiRecommendation.confidence}%
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => setNewRequest({ ...newRequest, type: aiRecommendation.type })}
-                    className="mt-3 bg-primary hover:bg-primary/90 text-primary-foreground"
-                    size="sm"
-                  >
-                    Apply Recommendation
-                  </Button>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowForm(false);
-                    setNewRequest({ type: '', purpose: '' });
-                    setAiRecommendation(null);
-                  }}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Submitting...' : 'Submit Request'}
-                </Button>
-              </div>
-            </form>
-          </Card>
-        )}
-
         {/* Document Types Info */}
         <Card className="p-6 mb-8 border-primary/20 bg-primary/5">
           <h2 className="text-xl font-bold text-foreground mb-4">Available Documents</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {documentTypes.map((doc) => (
-              <div key={doc.id} className="p-4 bg-card rounded-lg border border-border">
+              <div 
+                key={doc.id} 
+                className="p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition cursor-pointer"
+                onClick={() => handleDocumentSelect(doc)}
+              >
                 <h3 className="font-semibold text-foreground mb-1">{doc.name}</h3>
                 <p className="text-sm text-muted-foreground mb-3">{doc.description}</p>
-                <Badge className="bg-primary/10 text-primary">
-                  {doc.days} day{doc.days !== 1 ? 's' : ''}
-                </Badge>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-primary/10 text-primary">
+                    {doc.days} day{doc.days !== 1 ? 's' : ''}
+                  </Badge>
+                  <Badge className="bg-green-100 text-green-700">
+                    ₱{doc.price.toLocaleString()}
+                  </Badge>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mt-3 w-full text-primary hover:text-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDocumentSelect(doc);
+                  }}
+                >
+                  Request this document →
+                </Button>
               </div>
             ))}
           </div>
         </Card>
+
+        {/* Request Form Modal */}
+        {showForm && selectedDocument && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md p-6">
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Request Document</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowForm(false);
+                    setSelectedDocument(null);
+                    setPurpose('');
+                  }}
+                  className="p-2"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="mb-4 p-3 bg-primary/5 rounded-lg">
+                <h3 className="font-semibold text-foreground">{selectedDocument.name}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-primary/10 text-primary text-xs">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {selectedDocument.days} day{selectedDocument.days !== 1 ? 's' : ''}
+                  </Badge>
+                  <Badge className="bg-green-100 text-green-700 text-xs">
+                    <DollarSign className="w-3 h-3 mr-1" />
+                    ₱{selectedDocument.price.toLocaleString()}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-1">
+                  <ClipboardList className="w-4 h-4" />
+                  Requirements:
+                </h4>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 max-h-40 overflow-y-auto">
+                  {selectedDocument.requirements.map((req, idx) => (
+                    <li key={idx}>{req}</li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Note: {selectedDocument.priceDescription}
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmitRequest} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Purpose of Request
+                  </label>
+                  <Input
+                    type="text"
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                    placeholder="e.g., Job application, school enrollment..."
+                    className="border-input focus:ring-primary/50"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowForm(false);
+                      setSelectedDocument(null);
+                      setPurpose('');
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Request'}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
 
         {/* Recent Requests */}
         <Card className="border-primary/20">
@@ -261,7 +315,7 @@ export default function DocumentsPage() {
               {requests.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No requests yet. Create your first request above!</p>
+                  <p className="text-muted-foreground">No requests yet. Click on any document above to request!</p>
                 </div>
               ) : (
                 requests.map((req: any) => (
@@ -271,7 +325,6 @@ export default function DocumentsPage() {
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-xs font-mono text-muted-foreground">{req.id.slice(0, 8)}</span>
                         <h3 className="font-semibold text-foreground">{req.documentType}</h3>
                         {getStatusIcon(req.status)}
                       </div>
